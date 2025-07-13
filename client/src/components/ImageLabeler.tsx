@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { colourFor, normalise } from '../utils';
 
+
 interface BoundingBox {
   Left: number;
   Top: number;
@@ -17,22 +18,30 @@ interface LabelAWS {
   Confidence: number;
   Instances: Instance[];
 }
-const CONF_THRESHOLD = 80; 
+
+
+const CONF_THRESHOLD = 80; // threshold used for drawing boxes
 
 const ImageLabeler: React.FC = () => {
+ 
   const [file, setFile] = useState<File | null>(null);
   const [imageURL, setURL] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [allLabels, setAllLabels] = useState<LabelAWS[]>([]);
   const [showMore, setShowMore] = useState(false);
+
+  
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
 
+  
   const onDrop = (accepted: File[]) => {
     if (!accepted.length) return;
     const f = accepted[0];
     setFile(f);
     setURL(URL.createObjectURL(f));
+
+   
     setAllLabels([]);
     setShowMore(false);
     const ctx = canvasRef.current?.getContext('2d');
@@ -71,6 +80,8 @@ const ImageLabeler: React.FC = () => {
         ctx.strokeStyle = colour;
         ctx.lineWidth = 3;
         ctx.strokeRect(x, y, w, h);
+
+        
         const tag = `${nameNorm.charAt(0).toUpperCase() + nameNorm.slice(1)} ${inst.Confidence.toFixed(1)}%`;
         ctx.font = 'bold 13px sans-serif';
         const pad = 4,
@@ -86,18 +97,23 @@ const ImageLabeler: React.FC = () => {
     });
   };
 
+  
   const detectLabels = async () => {
     if (!file) return;
     setLoading(true);
     try {
       const fd = new FormData();
       fd.append('image', file);
-      
-      // const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-      const res = await fetch(`http://13.204.75.223:5000/detect-labels`, { method: 'POST',body: fd });
+
+const res = await fetch('http://13.204.75.223:5000/detect-labels', {
+  method: 'POST',
+  body: fd,
+});
+
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       const labels: LabelAWS[] = data.Raw?.Labels || data.TopLabels || [];
+     
       const sorted = labels.sort((a, b) => b.Confidence - a.Confidence);
       setAllLabels(sorted);
       drawBoxes(sorted);
@@ -108,6 +124,8 @@ const ImageLabeler: React.FC = () => {
       setLoading(false);
     }
   };
+
+ 
   const clearAll = () => {
     setFile(null);
     setURL(null);
@@ -117,10 +135,13 @@ const ImageLabeler: React.FC = () => {
     if (ctx && canvasRef.current) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
   };
 
+  
   const topLabel = allLabels.length ? allLabels[0] : null;
 
+  
   return (
     <div className="image-wrapper">
+    
       {!imageURL && (
         <div className="dropzone" {...getRootProps()}>
           <input {...getInputProps()} />
@@ -130,6 +151,8 @@ const ImageLabeler: React.FC = () => {
           </button>
         </div>
       )}
+
+     
       {imageURL && (
         <>
           <div style={{ position: 'relative' }}>
@@ -141,6 +164,8 @@ const ImageLabeler: React.FC = () => {
               onLoad={() => drawBoxes([])}
             />
             <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} />
+
+          
             {loading && (
               <div
                 style={{
@@ -158,6 +183,8 @@ const ImageLabeler: React.FC = () => {
               </div>
             )}
           </div>
+
+          
           {topLabel && (
             <div
               style={{
@@ -176,6 +203,8 @@ const ImageLabeler: React.FC = () => {
               <strong>{topLabel.Name}</strong>&nbsp;-&nbsp;{topLabel.Confidence.toFixed(1)}%
             </div>
           )}
+
+       
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 16 }}>
             <button type="button" className="secondary-btn" onClick={clearAll}>
               Choose another
@@ -183,12 +212,15 @@ const ImageLabeler: React.FC = () => {
             <button type="button" className="primary-btn" onClick={detectLabels} disabled={loading}>
               Detect
             </button>
+
+
             {allLabels.length > 0 && (
               <button type="button" className="secondary-btn" onClick={() => setShowMore((prev) => !prev)}>
                 {showMore ? 'Less ▲' : 'More ▼'}
               </button>
             )}
           </div>
+
           {showMore && (
             <div className="label-panel">
               <h3>All Labels</h3>
@@ -197,6 +229,7 @@ const ImageLabeler: React.FC = () => {
                   <li key={l.Name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span>{l.Name}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {/* confidence bar */}
                       <div
                         style={{
                           width: 80,
