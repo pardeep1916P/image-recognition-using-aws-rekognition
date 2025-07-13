@@ -1,0 +1,226 @@
+/* ========= Reset / Base ========= */
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: #000;
+  overflow-x: hidden;
+}
+
+#root {
+  position: relative;
+  z-index: 0;
+}
+
+/* ========= Aurora Background ========= */
+body::before {
+  content: '';
+  position: fixed;
+  top: -50vh;
+  left: -50vw;
+  width: 200vw;
+  height: 200vh;
+  background:
+    radial-gradient(circle at 30% 30%, #52faff 0%, transparent 50%),
+    radial-gradient(circle at 70% 40%, #32ff72 0%, transparent 50%),
+    radial-gradient(circle at 50% 70%, #ff66ff 0%, transparent 50%);
+  mix-blend-mode: screen;
+  opacity: 0.38;
+  animation: auroraMove 28s ease-in-out infinite alternate;
+  will-change: transform;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes auroraMove {
+  0% { transform: translate(-15%, 0) scale(1.1) rotate(0deg); }
+  50% { transform: translate(10%, 15%) scale(1.2) rotate(12deg); }
+  100% { transform: translate(-10%, -15%) scale(1.1) rotate(-8deg); }
+}
+
+/* ========= Global Layout Helpers ========= */
+.header {
+  display: flex;
+  justify-content: center;
+  margin: 0 auto;
+  max-width: 650px;
+  padding: 2rem 1rem 0;
+  color: #fff;
+}
+
+.image-wrapper {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ========= Drop‑zone ========= */
+.dropzone {
+  border: 2px dashed #999;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 800px;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.75rem 1.5rem;
+  font-size: 1.05rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: #ccc;
+  cursor: pointer;
+  transition: border 0.2s, background 0.2s;
+}
+
+.dropzone:hover {
+  border-color: #61dafb;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fafafa;
+}
+
+/* ========= Buttons ========= */
+.primary-btn,
+.secondary-btn {
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  transition: transform 0.2s, background 0.3s;
+}
+.primary-btn {
+  background: linear-gradient(135deg, #61dafb, #32ff72);
+  color: #000;
+}
+.primary-btn:hover {
+  background: linear-gradient(135deg, #52d2f9, #2be167);
+  transform: translateY(-2px);
+}
+.primary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.secondary-btn {
+  background: #444;
+  color: #fff;
+}
+.secondary-btn:hover {
+  background: #555;
+  transform: translateY(-2px);
+}
+
+/* ========= Images ========= */
+img {
+  display: block;
+  max-width: 100%;
+  max-height: 92vh;
+  width: auto;
+  height: auto;
+  border-radius: 12px;
+  margin: 0 auto;
+}
+
+/* ========= Expandable label panel ========= */
+.label-panel {
+  margin-top: 1rem;
+  width: 100%;
+  max-width: 800px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  color: #fff;
+  backdrop-filter: blur(4px);
+}
+
+.label-panel h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1.2rem;
+}
+
+.label-panel ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.label-panel li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.4rem 0;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.12);
+}
+
+.label-panel li:last-child {
+  border: none;
+}
+
+/* ========= Top Label Highlight ========= */
+.top-label {
+  margin-top: 1.5rem;
+  font-size: 1.15rem;
+  background: rgba(255, 255, 255, 0.07);
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: 500;
+  text-align: center;
+  max-width: 700px;
+}
+
+/* ========= Responsive ========= */
+@media (max-width: 600px) {
+  .image-wrapper {
+    padding: 1.5rem 1rem;
+  }
+  .primary-btn,
+  .secondary-btn {
+    width: 100%;
+    font-size: 1rem;
+  }
+  .dropzone {
+    min-height: 220px;
+    padding: 2rem 1.25rem;
+    font-size: 1rem;
+  }
+}
+
+@media (min-width: 601px) and (max-width: 767px) {
+  .dropzone {
+    min-height: 260px;
+    padding: 2rem 1.5rem;
+  }
+  .primary-btn,
+  .secondary-btn {
+    width: 100%;
+    font-size: 1rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .image-wrapper {
+    max-width: 960px;
+    padding: 2.5rem;
+  }
+  .primary-btn,
+  .secondary-btn {
+    width: auto;
+    font-size: 1.1rem;
+  }
+  .dropzone {
+    min-height: 300px;
+    padding: 2.25rem 2rem;
+  }
+}
