@@ -93,8 +93,8 @@ const ImageLabeler: React.FC = () => {
       const fd = new FormData();
       fd.append('image', file);
       
-      const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-      const res = await fetch(`${API_BASE}/detect-labels`, { method: 'POST',body: fd });
+      // const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const res = await fetch(`http://13.204.75.223:5000/detect-labels`, { method: 'POST',body: fd });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       const labels: LabelAWS[] = data.Raw?.Labels || data.TopLabels || [];
