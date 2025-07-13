@@ -1,12 +1,14 @@
-require("dotenv").config();
-const express = require("express");
-const multer = require("multer");
-const AWS = require("aws-sdk");
-const cors = require("cors");
+/* ---------- 0. Setup ---------- */
+require('dotenv').config();
+const express = require('express');
+const multer  = require('multer');
+const AWS     = require('aws-sdk');
+const cors    = require('cors');
 
-const app = express();
+const app  = express();
 const port = process.env.PORT || 5000;
 
+/* ---------- 1. Helpers ---------- */
 const TOP_N_LABELS = 2;
 
 function getTopLabels(labels, n = TOP_N_LABELS) {
@@ -26,43 +28,59 @@ function getTopLabels(labels, n = TOP_N_LABELS) {
 
 function logTopLabels(prefix, labels) {
   const top = getTopLabels(labels);
-  top.forEach((l) => {
-    l.Boxes.forEach((b, idx) => {
-    });
-  });
+  top.forEach((l) =>
+    l.Boxes.forEach((b, i) => {
+      console.log(
+        `${prefix} → ${l.Name} (${l.Confidence}%) #${i + 1} ` +
+          `[x:${(b.Left || 0).toFixed(2)} y:${(b.Top || 0).toFixed(2)} ` +
+          `w:${(b.Width || 0).toFixed(2)} h:${(b.Height || 0).toFixed(2)}]`
+      );
+    })
+  );
 }
 
-app.use(cors({ origin: "*" }));
+/* ---------- 2. Middleware ---------- */
+app.use(cors({ origin: '*' }));
 app.use(express.json());
 const upload = multer({ storage: multer.memoryStorage() });
 
+/* ---------- 3. AWS SDK ---------- */
 AWS.config.update({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  accessKeyId:     process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_REGION,
+  region:          process.env.AWS_REGION,
 });
 
 const rekognition = new AWS.Rekognition();
-const s3 = new AWS.S3();
-
+const s3          = new AWS.S3();
 const UPLOAD_BUCKET = process.env.AWS_UPLOAD_BUCKET;
 
-app.post("/detect-labels", upload.single("image"), async (req, res) => {
+/* ---------- 4. Routes ---------- */
+
+// 4‑A. Detect labels (image file sent from client)
+app.post('/detect-labels', upload.single('image'), async (req, res) => {
+  console.log('📥  /detect-labels called');
+
+  if (!req.file) {
+    console.log('❌  No file attached');
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+  console.log(`✅  File received: ${req.file.originalname} (${req.file.size} bytes)`);
+
+  let rekogParams;
+  let s3Key = null;
+
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded" });
-    }
-
-    let rekogParams;
-    let s3Key = null;
-
+    // Optional: upload to S3 first
     if (UPLOAD_BUCKET) {
-      s3Key = `uploads/${Date.now()}_${req.file.originalname.replace(/\s+/g, "_")}`;
+      s3Key = `uploads/${Date.now()}_${req.file.originalname.replace(/\s+/g, '_')}`;
+      console.log(`📤  Uploading image to s3://${UPLOAD_BUCKET}/${s3Key}`);
+
       await s3
         .putObject({
           Bucket: UPLOAD_BUCKET,
-          Key: s3Key,
-          Body: req.file.buffer,
+          Key:    s3Key,
+          Body:   req.file.buffer,
           ContentType: req.file.mimetype,
         })
         .promise();
@@ -80,68 +98,57 @@ app.post("/detect-labels", upload.single("image"), async (req, res) => {
       };
     }
 
+    console.log('🔍  Calling Rekognition.detectLabels …');
+
     rekognition.detectLabels(rekogParams, (err, data) => {
       if (err) {
-        return res.status(500).json({ error: "Failed to analyse image" });
+        console.error('💥  Rekognition error:', err.message || err);
+        return res.status(500).json({ error: 'Failed to analyse image', details: err.message });
       }
 
-      logTopLabels("Labels (uploaded)" + (s3Key ? ` [${s3Key}]` : ""), data.Labels);
-      return res.json({
+      console.log('✅  Rekognition success');
+      logTopLabels('📊  Top', data.Labels);
+
+      res.json({
         TopLabels: getTopLabels(data.Labels),
-        S3Object: s3Key ? { Bucket: UPLOAD_BUCKET, Key: s3Key } : null,
-        Raw: data,
+        S3Object:  s3Key ? { Bucket: UPLOAD_BUCKET, Key: s3Key } : null,
+        Raw:       data,
       });
     });
   } catch (err) {
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error('💥  Internal error:', err.message || err);
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
   }
 });
 
+// 4‑B. Detect labels directly from an existing S3 object
+app.post('/detect-labels-s3', async (req, res) => {
+  const { key, bucket } = req.body;
+  if (!key) return res.status(400).json({ error: "'key' is required" });
 
-app.post("/detect-labels-s3", async (req, res) => {
-  try {
-    const { key, bucket } = req.body;
-    if (!key) return res.status(400).json({ error: "'key' is required" });
+  const Bucket = bucket || process.env.AWS_S3_BUCKET || process.env.S3_BUCKET_NAME;
+  if (!Bucket) return res.status(500).json({ error: 'No S3 bucket specified' });
 
-    const Bucket = bucket || process.env.AWS_S3_BUCKET || process.env.S3_BUCKET_NAME;
-    if (!Bucket) return res.status(500).json({ error: "S3 bucket name not specified" });
+  console.log(`🔍  Rekognition for s3://${Bucket}/${key}`);
 
-    const labels = await detectLabelsFromS3(Bucket, key);
-    res.json({ TopLabels: labels });
-  } catch (err) {
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-});
-
-function detectLabelsFromS3(bucket, key) {
-  return new Promise((resolve, reject) => {
-    rekognition.detectLabels(
-      {
-        Image: { S3Object: { Bucket: bucket, Name: key } },
-        MaxLabels: 10,
-        MinConfidence: 70,
-      },
-      (err, data) => {
-        if (err) return reject(err);
-        logTopLabels(`Labels (S3:${bucket}/${key})`, data.Labels);
-        resolve(getTopLabels(data.Labels));
+  rekognition.detectLabels(
+    {
+      Image: { S3Object: { Bucket, Name: key } },
+      MaxLabels: 10,
+      MinConfidence: 70,
+    },
+    (err, data) => {
+      if (err) {
+        console.error('💥  Rekognition error:', err.message || err);
+        return res.status(500).json({ error: 'Rekognition failed', details: err.message });
       }
-    );
-  });
-}
+      logTopLabels('📊  Top', data.Labels);
+      res.json({ TopLabels: getTopLabels(data.Labels) });
+    }
+  );
+});
 
-async function runStartupRecognition() {
-  const bucket = process.env.AWS_S3_BUCKET || process.env.S3_BUCKET_NAME;
-  const key = process.env.IMAGE_FILE;
-  if (!bucket || !key) return;
-  try {
-    await detectLabelsFromS3(bucket, key);
-  } catch (e) {
-    console.error("Startup Rekognition failed:", e.message || e);
-  }
-}
-
-app.listen(port, () => {
-  console.log(`🚀 Server running on http://localhost:${port}`);
-  runStartupRecognition();
+/* ---------- 5. Startup ---------- */
+app.listen(port, '0.0.0.0', () => {
+  console.log(`🚀  Server running on http://0.0.0.0:${port}`);
 });
