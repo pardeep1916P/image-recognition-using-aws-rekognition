@@ -2,7 +2,6 @@ import React, { useState, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { colourFor, normalise } from '../utils';
 
-
 interface BoundingBox {
   Left: number;
   Top: number;
@@ -19,29 +18,25 @@ interface LabelAWS {
   Instances: Instance[];
 }
 
-
-const CONF_THRESHOLD = 80; // threshold used for drawing boxes
+const CONF_THRESHOLD = 80;
 
 const ImageLabeler: React.FC = () => {
- 
+
   const [file, setFile] = useState<File | null>(null);
   const [imageURL, setURL] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [allLabels, setAllLabels] = useState<LabelAWS[]>([]);
   const [showMore, setShowMore] = useState(false);
 
-  
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
 
-  
   const onDrop = (accepted: File[]) => {
     if (!accepted.length) return;
     const f = accepted[0];
     setFile(f);
     setURL(URL.createObjectURL(f));
 
-   
     setAllLabels([]);
     setShowMore(false);
     const ctx = canvasRef.current?.getContext('2d');
@@ -81,7 +76,6 @@ const ImageLabeler: React.FC = () => {
         ctx.lineWidth = 3;
         ctx.strokeRect(x, y, w, h);
 
-        
         const tag = `${nameNorm.charAt(0).toUpperCase() + nameNorm.slice(1)} ${inst.Confidence.toFixed(1)}%`;
         ctx.font = 'bold 13px sans-serif';
         const pad = 4,
@@ -97,7 +91,6 @@ const ImageLabeler: React.FC = () => {
     });
   };
 
-  
   const detectLabels = async () => {
     if (!file) return;
     setLoading(true);
@@ -105,15 +98,17 @@ const ImageLabeler: React.FC = () => {
       const fd = new FormData();
       fd.append('image', file);
 
-const res = await fetch('http://13.204.75.223:5000/detect-labels', {
+const API_BASE =process.env.REACT_APP_API_URL || 'http://localhost:5000';            
+
+
+const res = await fetch(`${API_BASE}/detect-labels`, {
   method: 'POST',
-  body: fd,
+  body: fd,                         
 });
 
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       const labels: LabelAWS[] = data.Raw?.Labels || data.TopLabels || [];
-     
       const sorted = labels.sort((a, b) => b.Confidence - a.Confidence);
       setAllLabels(sorted);
       drawBoxes(sorted);
@@ -135,13 +130,12 @@ const res = await fetch('http://13.204.75.223:5000/detect-labels', {
     if (ctx && canvasRef.current) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
   };
 
-  
+
   const topLabel = allLabels.length ? allLabels[0] : null;
 
-  
+
   return (
     <div className="image-wrapper">
-    
       {!imageURL && (
         <div className="dropzone" {...getRootProps()}>
           <input {...getInputProps()} />
@@ -152,7 +146,6 @@ const res = await fetch('http://13.204.75.223:5000/detect-labels', {
         </div>
       )}
 
-     
       {imageURL && (
         <>
           <div style={{ position: 'relative' }}>
@@ -165,7 +158,6 @@ const res = await fetch('http://13.204.75.223:5000/detect-labels', {
             />
             <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} />
 
-          
             {loading && (
               <div
                 style={{
@@ -184,7 +176,6 @@ const res = await fetch('http://13.204.75.223:5000/detect-labels', {
             )}
           </div>
 
-          
           {topLabel && (
             <div
               style={{
@@ -204,7 +195,6 @@ const res = await fetch('http://13.204.75.223:5000/detect-labels', {
             </div>
           )}
 
-       
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 16 }}>
             <button type="button" className="secondary-btn" onClick={clearAll}>
               Choose another
@@ -212,7 +202,6 @@ const res = await fetch('http://13.204.75.223:5000/detect-labels', {
             <button type="button" className="primary-btn" onClick={detectLabels} disabled={loading}>
               Detect
             </button>
-
 
             {allLabels.length > 0 && (
               <button type="button" className="secondary-btn" onClick={() => setShowMore((prev) => !prev)}>
@@ -229,7 +218,6 @@ const res = await fetch('http://13.204.75.223:5000/detect-labels', {
                   <li key={l.Name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span>{l.Name}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      {/* confidence bar */}
                       <div
                         style={{
                           width: 80,
