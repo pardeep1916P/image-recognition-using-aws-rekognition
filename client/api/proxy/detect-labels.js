@@ -1,58 +1,38 @@
-import formidable from 'formidable';
-import fs from 'fs';
-import AWS from 'aws-sdk';
-
-// Disable Next.js default body parser
 export const config = {
   api: {
     bodyParser: false,
   },
 };
 
-const handler = async (req, res) => {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Only POST requests allowed' });
+export default async function handler(req, res) {
+  const fetch = (await import('node-fetch')).default;
+
+  const BACKEND_BASE_URL = process.env.BACKEND_BASE_URL;
+
+  if (!BACKEND_BASE_URL) {
+    return res.status(500).json({ error: 'Missing BACKEND_BASE_URL env' });
   }
 
-  const form = new formidable.IncomingForm({ keepExtensions: true });
+  const backendURL = `${BACKEND_BASE_URL}/detect-labels`;
 
-  form.parse(req, async (err, fields, files) => {
-    if (err) {
-      console.error('Form parsing error:', err);
-      return res.status(500).json({ error: 'Error parsing the file' });
-    }
+  try {
+    const backendResponse = await fetch(backendURL, {
+      method: req.method,
+      headers: {
+        ...req.headers,
+        host: BACKEND_BASE_URL.replace(/^https?:\/\//, '').split('/')[0],
+      },
+      body: req,
+    });
 
-    try {
-      const imageFile = files?.image;
-      if (!imageFile) {
-        return res.status(400).json({ error: 'No image file uploaded' });
-      }
+    backendResponse.headers.forEach((value, key) => {
+      res.setHeader(key, value);
+    });
 
-      // Read file as buffer
-      const imageBuffer = fs.readFileSync(imageFile.filepath);
-
-      // Configure AWS Rekognition
-      const rekognition = new AWS.Rekognition({
-        region: process.env.AWS_REGION,
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-      });
-
-      // Detect labels
-      const result = await rekognition
-        .detectLabels({
-          Image: { Bytes: imageBuffer },
-          MaxLabels: 10,
-          MinConfidence: 70,
-        })
-        .promise();
-
-      res.status(200).json(result);
-    } catch (error) {
-      console.error('Rekognition error:', error);
-      res.status(500).json({ error: 'Label detection failed' });
-    }
-  });
-};
-
-export default handler;
+    res.status(backendResponse.status);
+    backendResponse.body.pipe(res);
+  } catch (err) {
+    console.error('❌ Proxy error:', err.message);
+    res.status(500).json({ error: 'Proxy failed', details: err.message });
+  }
+}
