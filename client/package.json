@@ -2,7 +2,8 @@
   "name": "image-labeler-aurora",
   "version": "1.0.0",
   "private": true,
-  "dependencies": {
+  "type": "module",
+  "dependencies": { 
     "ogl": "^1.0.11",
     "randomcolor": "^0.6.2",
     "react": "^18.2.0",
