@@ -1,4 +1,3 @@
-/* ========= Reset / Base ========= */
 html,
 body,
 #root {
@@ -16,7 +15,6 @@ body,
   z-index: 0;
 }
 
-/* ========= Aurora Background ========= */
 body::before {
   content: '';
   position: fixed;
@@ -42,7 +40,6 @@ body::before {
   100% { transform: translate(-10%, -15%) scale(1.1) rotate(-8deg); }
 }
 
-/* ========= Global Layout Helpers ========= */
 .header {
   display: flex;
   justify-content: center;
@@ -62,7 +59,6 @@ body::before {
   justify-content: center;
 }
 
-/* ========= Drop‑zone ========= */
 .dropzone {
   border: 2px dashed #999;
   border-radius: 20px;
@@ -88,7 +84,6 @@ body::before {
   color: #fafafa;
 }
 
-/* ========= Buttons ========= */
 .primary-btn,
 .secondary-btn {
   padding: 1rem 2rem;
@@ -119,7 +114,6 @@ body::before {
   transform: translateY(-2px);
 }
 
-/* ========= Images ========= */
 img {
   display: block;
   max-width: 100%;
@@ -130,7 +124,6 @@ img {
   margin: 0 auto;
 }
 
-/* ========= Expandable label panel ========= */
 .label-panel {
   margin-top: 1rem;
   width: 100%;
@@ -167,7 +160,6 @@ img {
   border: none;
 }
 
-/* ========= Top Label Highlight ========= */
 .top-label {
   margin-top: 1.5rem;
   font-size: 1.15rem;
@@ -180,7 +172,6 @@ img {
   max-width: 700px;
 }
 
-/* ========= Responsive ========= */
 @media (max-width: 600px) {
   .image-wrapper {
     padding: 1.5rem 1rem;
