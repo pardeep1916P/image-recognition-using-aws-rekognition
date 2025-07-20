@@ -1,4 +1,3 @@
-/* ---------- 0. Setup ---------- */
 require('dotenv').config();
 const express = require('express');
 const multer  = require('multer');
@@ -8,7 +7,6 @@ const cors    = require('cors');
 const app  = express();
 const port = process.env.PORT || 5000;
 
-/* ---------- 1. Helpers ---------- */
 const TOP_N_LABELS = 2;
 
 function getTopLabels(labels, n = TOP_N_LABELS) {
@@ -39,12 +37,10 @@ function logTopLabels(prefix, labels) {
   );
 }
 
-/* ---------- 2. Middleware ---------- */
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 const upload = multer({ storage: multer.memoryStorage() });
 
-/* ---------- 3. AWS SDK ---------- */
 AWS.config.update({
   accessKeyId:     process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -55,9 +51,6 @@ const rekognition = new AWS.Rekognition();
 const s3          = new AWS.S3();
 const UPLOAD_BUCKET = process.env.AWS_UPLOAD_BUCKET;
 
-/* ---------- 4. Routes ---------- */
-
-// 4‑A. Detect labels (image file sent from client)
 app.post('/detect-labels', upload.single('image'), async (req, res) => {
   console.log('📥  /detect-labels called');
 
@@ -71,7 +64,6 @@ app.post('/detect-labels', upload.single('image'), async (req, res) => {
   let s3Key = null;
 
   try {
-    // Optional: upload to S3 first
     if (UPLOAD_BUCKET) {
       s3Key = `uploads/${Date.now()}_${req.file.originalname.replace(/\s+/g, '_')}`;
       console.log(`📤  Uploading image to s3://${UPLOAD_BUCKET}/${s3Key}`);
@@ -121,7 +113,6 @@ app.post('/detect-labels', upload.single('image'), async (req, res) => {
   }
 });
 
-// 4‑B. Detect labels directly from an existing S3 object
 app.post('/detect-labels-s3', async (req, res) => {
   const { key, bucket } = req.body;
   if (!key) return res.status(400).json({ error: "'key' is required" });
@@ -148,7 +139,6 @@ app.post('/detect-labels-s3', async (req, res) => {
   );
 });
 
-/* ---------- 5. Startup ---------- */
 app.listen(port, '0.0.0.0', () => {
   console.log(`🚀  Server running on http://0.0.0.0:${port}`);
 });
