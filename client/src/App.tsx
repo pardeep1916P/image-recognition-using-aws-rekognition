@@ -5,12 +5,10 @@ import './index.css';
 
 const App: React.FC = () => (
   <div style={{ position: 'relative', minHeight: '100vh', overflow: 'hidden' }}>
-    {/* Aurora background */}
     <div style={{ position: 'absolute', inset: 0, zIndex: -1 }}>
       <Aurora />
     </div>
 
-    {/* Header */}
     <header className="header">
       <div
         style={{
@@ -28,7 +26,6 @@ const App: React.FC = () => (
       </div>
     </header>
 
-    {/* Main content */}
     <main style={{ display: 'flex', justifyContent: 'center', padding: '40px 0' }}>
       <ImageLabeler />
     </main>
