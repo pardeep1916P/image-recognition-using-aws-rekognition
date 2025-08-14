@@ -88,7 +88,7 @@ Vercel            Host React frontend
 
 Backend API https: https://<your-api-id>.execute-api.<region>.amazonaws.com/prod
 
-Frontend (Vercel):  https://image-recognition-using-aws-rekogni.vercel.app/
+Frontend (Vercel): https://image-recognition-using-aws-rekogni.vercel.app/
 
 ---
 
