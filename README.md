@@ -93,24 +93,25 @@ Frontend (Vercel): https://image-recognition-using-aws-rekogni.vercel.app/
 ---
 
 ##🧪 Local Development
+```bash
+#1️⃣ Clone the repo
 
-1️⃣ Clone the repo
-```plaintext
 git clone https://github.com/pardeep1916P/image-recognition-using-aws-rekognition.git
 cd image-recognition-using-aws-rekognition
-```
+
 #2️⃣ Install frontend dependencies
-```plaintext
+
 npm install
-```
+
 #3️⃣ Install backend dependencies
-```plaintext
+
 cd ../server
 npm install
-```
+
 #4️⃣ Start backend locally
-```plaintext
+
 npm start
+
 ```
 
 ---
